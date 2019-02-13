@@ -10,14 +10,14 @@ rtmp {
 
             # Enable recording
             record all;
-            record_path /tmp/rec;
+	    record_path /tmp/rec;
             record_suffix -%d-%b-%y-%T.flv;
 
             # Enable HLS
             hls on;
             hls_path /tmp/hls;
             hls_fragment 1s;
-            hls_playlist_length 2s;
+            hls_playlist_length 10s;
 
             # Use system time rounded to 500ms as fragment names
             hls_fragment_naming system;
@@ -32,11 +32,41 @@ http {
         types {
             application/vnd.apple.mpegurl m3u8;
         }
+
         root /tmp;
         add_header Cache-Control no-cache;
 
         # To avoid issues with cross-domain HTTP requests (e.g. during development)
         add_header Access-Control-Allow-Origin *;
+    }
+
+    server {
+        listen 8000;
+
+        location /vod {
+            autoindex on;
+            alias /tmp/rec;
+        }
+
+        # rtmp stat
+        location /stat {
+            rtmp_stat all;
+            rtmp_stat_stylesheet stat.xsl;
+        }
+        location /stat.xsl {
+            # you can move stat.xsl to a different location
+            root /usr/build/nginx-rtmp-module;
+        }
+
+        # rtmp control
+        location /control {
+            rtmp_control all;
+        }
+
+        error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   html;
+        }
     }
 }
 
